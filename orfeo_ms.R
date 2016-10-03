@@ -7,7 +7,7 @@ NDVI <- function(input, out){
   if(missing(out)){
     stop("Please provide output")}
   o_dir <- "E:\\OTB-5.6.1-win64\\OTB-5.6.1-win64\\bin\\otbcli_RadiometricIndices"
-  system(paste(o_dir, "-in", input, "-out", out, "-channels.red", 1, "-channels.nir", 4, "-list Vegetation:NDVI", sep=" "))
+  system(paste(o_dir, "-in", input, "-out", out, "-channels.red", 1, "-channels.nir", 4, "-list Vegetation:NDVI", "-ram 3000",sep=" "))
 }
 # NDVI(input = "E://geog515//naip_tiffs//m_2909401_ne_15_1_20141015_20141201.tif", out = "E://geog515//processed//testndvi.tif")
 
@@ -19,7 +19,7 @@ mergeBands <- function(tif, ndvi, out){
   if(missing(out)){
     stop("")}
   o_dir <- "E:\\OTB-5.6.1-win64\\OTB-5.6.1-win64\\bin\\otbcli_ConcatenateImages"
-  system(paste(o_dir, "-il", tif, ndvi, "-out", out))
+  system(paste(o_dir, "-il", tif, ndvi, "-out", out,"-ram 3000", sep = " "))
 }
 
 
@@ -39,7 +39,7 @@ meanShiftSmoothing <- function(input, fout, foutpos, ranger, spatialr, maxiter, 
   if(missing(modesearch)){
     modesearch <- 0}
   o_dir <- "E:\\OTB-5.6.1-win64\\OTB-5.6.1-win64\\bin\\otbcli_MeanShiftSmoothing"
-  system(paste(o_dir, "-in", input, "-fout", fout, "-foutpos", foutpos, "-ranger", ranger, "-spatialr", spatialr, "-maxiter", maxiter, "-modesearch", modesearch, sep=" "))
+  system(paste(o_dir, "-in", input, "-fout", fout, "-foutpos", foutpos, "-ranger", ranger, "-spatialr", spatialr, "-maxiter", maxiter, "-modesearch", modesearch, "-ram 3000", sep=" "))
 }
 # meanShiftSmoothing(input = "E://geog515//naip_tiffs//m_2909401_ne_15_1_20141015_20141201.tif", fout = "E://geog515//processed//filtered_range.tif")
 
@@ -82,7 +82,7 @@ LSMSSmallRegionsMerging <- function(input, inseg, out, minsize, tilesizex, tiles
   if(missing(tilesizey)){
     tilesizey <- 256}
   o_dir <- "E:\\OTB-5.6.1-win64\\OTB-5.6.1-win64\\bin\\otbcli_LSMSSmallRegionsMerging"
-  system(paste(o_dir, "-in", input, "-inseg", inseg, "-out", out, "unint32", "-minsize", minsize, "-tilesizex", tilesizex, "-tilesizey", tilesizey, sep=" "))
+  system(paste(o_dir, "-in", input, "-inseg", inseg, "-out", out, "unint32", "-minsize", minsize, "-tilesizex", tilesizex, "-tilesizey", tilesizey, "-ram 1536", sep=" "))
 }
 
 # LSMSSmallRegionsMerging(input = "/Volumes/geo_mac/fout.tif", inseg = "/Volumes/geo_mac/seg.tif", out = "/Volumes/geo_mac/seg_merg.tif", tilesizex = 256, tilesizey = 256)
@@ -114,10 +114,11 @@ for (i in 1:length(myfiles)){
   meanShiftSmoothing(input = paste0(tmpdir, "merge", i, ".tif"), fout = paste0(tmpdir, "range", i, ".tif"), foutpos = paste0(tmpdir, "spatial", i, ".tif"))
   LSMSSegmentation(input = paste0(tmpdir, "range", i, ".tif"), inpos = paste0(tmpdir, "spatial", i, ".tif"), out = paste0(tmpdir, "seg", i, ".tif"))
   LSMSVectorization(input = myfiles[[i]], inseg = paste0(tmpdir, "seg", i, ".tif"), outshp = paste0(vectdir, "segfinal", i, ".shp"))
-  file.remove(tmpdir, "ndvi", i, ".tif")
-  file.remove(tmpdir, "range", i, ".tif")
-  file.remove(tmpdir, "spatial", i, ".tif")
-  file.remove(tmpdir, "seg", i, ".tif")
+  file.remove(paste0(tmpdir, "ndvi", i, ".tif"))
+  file.remove(paste0(tmpdir, "range", i, ".tif"))
+  file.remove(paste0(tmpdir, "spatial", i, ".tif"))
+  file.remove(paste0(tmpdir, "seg", i, ".tif"))
+  file.remove(paste0(tmpdir, "merge", i, ".tif"))
 }
 
 
