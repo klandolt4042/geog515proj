@@ -4,7 +4,7 @@ library(tigris)
 library(stringr)
 library(rgdal)
 
-***REMOVED***
+#read api.key.install
 
 #Texas is 48
 #Harris County is 201
