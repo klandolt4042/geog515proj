@@ -1,6 +1,6 @@
 #make
 
-
+#make NDVI function for NAIP imagery
 NDVI <- function(input, out){
   if(missing(input)){
     stop("Please provide input")}
@@ -11,6 +11,7 @@ NDVI <- function(input, out){
 }
 # NDVI(input = "E://geog515//naip_tiffs//m_2909401_ne_15_1_20141015_20141201.tif", out = "E://geog515//processed//testndvi.tif")
 
+#make merge bands function to merge R,G,B,NIR, and NDVI
 mergeBands <- function(tif, ndvi, out){
   if(missing(tif)){
     stop("")}
@@ -22,7 +23,8 @@ mergeBands <- function(tif, ndvi, out){
   system(paste(o_dir, "-il", tif, ndvi, "-out", out,"-ram 3000", sep = " "))
 }
 
-
+#Large-Scale Mean Shift (LSMS) segmentation
+#Step 1: mean shift smoothing 
 meanShiftSmoothing <- function(input, fout, foutpos, ranger, spatialr, maxiter, modesearch){
   if(missing(input)){
     stop("Please provide input")}
@@ -41,9 +43,11 @@ meanShiftSmoothing <- function(input, fout, foutpos, ranger, spatialr, maxiter, 
   o_dir <- "E:\\OTB-5.6.1-win64\\OTB-5.6.1-win64\\bin\\otbcli_MeanShiftSmoothing"
   system(paste(o_dir, "-in", input, "-fout", fout, "-foutpos", foutpos, "-ranger", ranger, "-spatialr", spatialr, "-maxiter", maxiter, "-modesearch", modesearch, "-ram 3000", sep=" "))
 }
+
+#example
 # meanShiftSmoothing(input = "E://geog515//naip_tiffs//m_2909401_ne_15_1_20141015_20141201.tif", fout = "E://geog515//processed//filtered_range.tif")
 
-
+#step two: segmentation
 LSMSSegmentation <- function(input, inpos, out, ranger, spatialr, minsize, tilesizex, tilesizey){
   if(missing(input)){
     stop("Please provide input")}
@@ -66,8 +70,11 @@ LSMSSegmentation <- function(input, inpos, out, ranger, spatialr, minsize, tiles
                "-spatialr", spatialr, "-minsize", minsize, "-tilesizex", tilesizex, "-tilesizey", tilesizey, sep=" "))
 }
 
+#example
 # LSMSSegmentation(input = "/Volumes/geo_mac/fout.tif", inpos = "/Volumes/geo_mac/foutpos.tif", out = "/Volumes/geo_mac/seg.tif")
 
+#step three: small regions merging
+#NOTE: not used because I want to delineate indivial trees if possible
 LSMSSmallRegionsMerging <- function(input, inseg, out, minsize, tilesizex, tilesizey){
   if(missing(input)){
     stop("Please provide input")}
@@ -85,8 +92,10 @@ LSMSSmallRegionsMerging <- function(input, inseg, out, minsize, tilesizex, tiles
   system(paste(o_dir, "-in", input, "-inseg", inseg, "-out", out, "unint32", "-minsize", minsize, "-tilesizex", tilesizex, "-tilesizey", tilesizey, "-ram 1536", sep=" "))
 }
 
+#example
 # LSMSSmallRegionsMerging(input = "/Volumes/geo_mac/fout.tif", inseg = "/Volumes/geo_mac/seg.tif", out = "/Volumes/geo_mac/seg_merg.tif", tilesizex = 256, tilesizey = 256)
 
+#step four: Vectorization
 LSMSVectorization <- function(input, inseg, outshp, tilesizex, tilesizey){
   if(missing(input)){
     stop("Pleaes provide input image")}
@@ -102,12 +111,17 @@ LSMSVectorization <- function(input, inseg, outshp, tilesizex, tilesizey){
   system(paste(o_dir, "-in", input, "-inseg", inseg, "-out", outshp, "-tilesizex", tilesizex, "-tilesizey", tilesizey, sep=" "))
 }
 
+#list of geotifs
 myfilenames <- list.files("E:\\geog515\\naip_tiffs\\", pattern=".tif$")
 myfiles <- list.files("E:\\geog515\\naip_tiffs\\", pattern=".tif$", full.names=TRUE)
 
+#list of directories
 tmpdir <- "E:\\geog515\\processed\\"
 vectdir <- "D:\\processed\\vectors\\"
 
+#loop through functions, make vector output, delete temporary files
+#approximately 90 hours of run time
+#total temporary files take approximately 543 gb
 for (i in 1:length(myfiles)){
   NDVI(input = myfiles[[i]], out = paste0(tmpdir, "ndvi", i, ".tif"))
   mergeBands(tif = myfiles[[i]], ndvi = paste0(tmpdir, "ndvi", i, ".tif"), out = paste0(tmpdir, "merge", i, ".tif"))
