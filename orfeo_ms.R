@@ -11,16 +11,25 @@ NDVI <- function(input, out){
 }
 # NDVI(input = "E://geog515//naip_tiffs//m_2909401_ne_15_1_20141015_20141201.tif", out = "E://geog515//processed//testndvi.tif")
 
+HaralickTextureExtration <- function(input, output){
+  if(missing(input)){
+    stop("Please provide input")}
+  if(missing(output)){
+    stop("Please provide out")}
+  o_dir <- "E:\\OTB-5.6.1-win64\\OTB-5.6.1-win64\\bin\\otbcli_HaralickTextureExtraction"
+  system(paste(o_dir, "-in", input, "-channel", 1, "-texture", "simple", "-parameters.min", "0", "-parameters.max", "255", "-out", output))
+}
+
 #make merge bands function to merge R,G,B,NIR, and NDVI
-mergeBands <- function(tif, ndvi, out){
-  if(missing(tif)){
+mergeBands <- function(layer.1, layer.2, out){
+  if(missing(layer.1)){
     stop("")}
-  if(missing(ndvi)){
+  if(missing(layer.2)){
     stop("")}
   if(missing(out)){
     stop("")}
   o_dir <- "E:\\OTB-5.6.1-win64\\OTB-5.6.1-win64\\bin\\otbcli_ConcatenateImages"
-  system(paste(o_dir, "-il", tif, ndvi, "-out", out,"-ram 3000", sep = " "))
+  system(paste(o_dir, "-il", layer.1, layer.2, "-out", out,"-ram 3000", sep = " "))
 }
 
 #Large-Scale Mean Shift (LSMS) segmentation
