@@ -5,6 +5,7 @@ library(stringr)
 library(rgdal)
 
 #read api.key.install
+read.lines
 
 #Texas is 48
 #Harris County is 201
