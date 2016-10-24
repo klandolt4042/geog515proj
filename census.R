@@ -1,4 +1,4 @@
-dd packages
+#load packages
 library(acs)
 library(tigris)
 library(stringr)
