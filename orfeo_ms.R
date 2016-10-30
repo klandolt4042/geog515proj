@@ -11,7 +11,7 @@ NDVI <- function(input, out){
 }
 # NDVI(input = "E://geog515//naip_tiffs//m_2909401_ne_15_1_20141015_20141201.tif", out = "E://geog515//processed//testndvi.tif")
 
-NDVIScale <- function(input, output){
+Scale255 <- function(input, output){
   if(missing(input)){
     stop("")}
   if(missing(output)){
@@ -155,54 +155,66 @@ LSMSVectorization <- function(input, inseg, outshp, tilesizex, tilesizey){
   system(paste(o_dir, "-in", input, "-inseg", inseg, "-out", outshp, "-tilesizex", tilesizex, "-tilesizey", tilesizey, sep=" "))
 }
 
-#list of geotifs
-myfilenames <- list.files("E:\\geog515\\naip_tiffs\\", pattern=".tif$")
-myfiles <- list.files("E:\\geog515\\naip_tiffs\\", pattern=".tif$", full.names=TRUE)
 
-#list of directories
-tmpdir <- "E:\\geog515\\processed\\"
-vectdir <- "D:\\processed\\vectors\\"
-
-#loop through functions, make vector output, delete temporary files
-#approximately 90 hours of run time
-#total temporary files take approximately 543 gb
-for (i in 1:length(myfiles)){
-  NDVI(input = myfiles[[i]], out = paste0(tmpdir, "ndvi", i, ".tif"))
-  mergeBands(tif = myfiles[[i]], ndvi = paste0(tmpdir, "ndvi", i, ".tif"), out = paste0(tmpdir, "merge", i, ".tif"))
-  meanShiftSmoothing(input = paste0(tmpdir, "merge", i, ".tif"), fout = paste0(tmpdir, "range", i, ".tif"), foutpos = paste0(tmpdir, "spatial", i, ".tif"))
-  LSMSSegmentation(input = paste0(tmpdir, "range", i, ".tif"), inpos = paste0(tmpdir, "spatial", i, ".tif"), out = paste0(tmpdir, "seg", i, ".tif"))
-  LSMSVectorization(input = myfiles[[i]], inseg = paste0(tmpdir, "seg", i, ".tif"), outshp = paste0(vectdir, "segfinal", i, ".shp"))
-  file.remove(paste0(tmpdir, "ndvi", i, ".tif"))
-  file.remove(paste0(tmpdir, "range", i, ".tif"))
-  file.remove(paste0(tmpdir, "spatial", i, ".tif"))
-  file.remove(paste0(tmpdir, "seg", i, ".tif"))
-  file.remove(paste0(tmpdir, "merge", i, ".tif"))
+#Edge Detection
+edge <- function(input, output){
+  if(missing(input)){
+    stop("Pleaes provide input image")}
+  if(missing(output)){
+    stop("Please provide output")}
+  o_dir <- "E:\\OTB-5.6.1-win64\\OTB-5.6.1-win64\\bin\\otbcli_EdgeExtraction"
+  system(paste(o_dir, "-in", input, "-channel 1", "-out", output, "-ram 3000"))
 }
 
 
-# my.filenames <- list.files("D:/naip_subset/", pattern=".tif$") 
-myfiles <- list.files("D:/naip_subset/", pattern=".tif$", full.names = TRUE)
-tmpdir <- "D:/sub_process/tmp/"
-vectdir <- "D:/sub_process/vect/"
-
-
-for (i in 1:length(myfiles)){
-  #NDVI
-  NDVI(input = myfiles[[i]], out = paste0(tmpdir, "ndvi", i, ".tif"))
-  #Scale NDVI
-  NDVIScale(input = paste0(tmpdir, "ndvi", i, ".tif"), output = paste0(tmpdir, "ndviscale", i, ".tif"))
-  #Texture on NDVI
-  HaralickTextureExtration(input = paste0(tmpdir, "ndviscale", i, ".tif"), output = paste0(tmpdir, "text", i, ".tif"))
-  #Split Texture
-  # BandSplit(input = paste0(tmpdir, "text", i, ".tif"), output = paste0(tmpdir, "text", i, "band", ".tif"))
-  #Merge desired bands
-  # mergeBands(layer.1 = paste0(tmpdir, "ndvi", i, ".tif"), layer.2 = paste0(tmpdir, "text", i, "band_0.tif"), layer.3 = paste0(tmpdir, "text", i, "band_1.tif"), layer.4 = paste0(tmpdir, "text", i, "band_3.tif"), layer.5 = paste0(tmpdir, "text", i, "band_7.tif"), out = paste0(tmpdir, "merge", i, ".tif"))
-  mergeBands(layer.1 = myfiles[[i]], layer.2 = paste0(tmpdir, "ndviscale", i, ".tif"), out = paste0(tmpdir, "merge", i, ".tif"))
-  #Segmentation
-  meanShiftSmoothing(input = paste0(tmpdir, "merge", i, ".tif"), fout = paste0(tmpdir, "range", i, ".tif"), foutpos = paste0(tmpdir, "spatial", i, ".tif"))
-  LSMSSegmentation(input = paste0(tmpdir, "range", i, ".tif"), inpos = paste0(tmpdir, "spatial", i, ".tif"), out = paste0(tmpdir, "seg", i, ".tif"))
-  # LSMSSmallRegionsMerging(input = paste0(tmpdir, "range", i, ".tif"), inseg = paste0(tmpdir, "seg", i, ".tif"), out = paste0(tmpdir, "smallmerge", i, ".tif", minsize = 3))
-  LSMSVectorization(input = myfiles[[i]], inseg = paste0(tmpdir, "seg", i, ".tif"), outshp = paste0(vectdir, "segfinal", i, ".shp"))
-  
-}
+# #list of geotifs
+# myfilenames <- list.files("E:\\geog515\\naip_tiffs\\", pattern=".tif$")
+# myfiles <- list.files("E:\\geog515\\naip_tiffs\\", pattern=".tif$", full.names=TRUE)
+# 
+# #list of directories
+# tmpdir <- "E:\\geog515\\processed\\"
+# vectdir <- "D:\\processed\\vectors\\"
+# 
+# #loop through functions, make vector output, delete temporary files
+# #approximately 90 hours of run time
+# #total temporary files take approximately 543 gb
+# for (i in 1:length(myfiles)){
+#   NDVI(input = myfiles[[i]], out = paste0(tmpdir, "ndvi", i, ".tif"))
+#   mergeBands(tif = myfiles[[i]], ndvi = paste0(tmpdir, "ndvi", i, ".tif"), out = paste0(tmpdir, "merge", i, ".tif"))
+#   meanShiftSmoothing(input = paste0(tmpdir, "merge", i, ".tif"), fout = paste0(tmpdir, "range", i, ".tif"), foutpos = paste0(tmpdir, "spatial", i, ".tif"))
+#   LSMSSegmentation(input = paste0(tmpdir, "range", i, ".tif"), inpos = paste0(tmpdir, "spatial", i, ".tif"), out = paste0(tmpdir, "seg", i, ".tif"))
+#   LSMSVectorization(input = myfiles[[i]], inseg = paste0(tmpdir, "seg", i, ".tif"), outshp = paste0(vectdir, "segfinal", i, ".shp"))
+#   file.remove(paste0(tmpdir, "ndvi", i, ".tif"))
+#   file.remove(paste0(tmpdir, "range", i, ".tif"))
+#   file.remove(paste0(tmpdir, "spatial", i, ".tif"))
+#   file.remove(paste0(tmpdir, "seg", i, ".tif"))
+#   file.remove(paste0(tmpdir, "merge", i, ".tif"))
+# }
+# 
+# 
+# # my.filenames <- list.files("D:/naip_subset/", pattern=".tif$") 
+# myfiles <- list.files("D:/naip_subset/", pattern=".tif$", full.names = TRUE)
+# tmpdir <- "D:/sub_process/tmp/"
+# vectdir <- "D:/sub_process/vect/"
+# 
+# 
+# for (i in 1:length(myfiles)){
+#   #NDVI
+#   NDVI(input = myfiles[[i]], out = paste0(tmpdir, "ndvi", i, ".tif"))
+#   #Scale NDVI
+#   NDVIScale(input = paste0(tmpdir, "ndvi", i, ".tif"), output = paste0(tmpdir, "ndviscale", i, ".tif"))
+#   #Texture on NDVI
+#   #HaralickTextureExtration(input = paste0(tmpdir, "ndviscale", i, ".tif"), output = paste0(tmpdir, "text", i, ".tif"))
+#   #Split Texture
+#   #BandSplit(input = paste0(tmpdir, "text", i, ".tif"), output = paste0(tmpdir, "text", i, "band", ".tif"))
+#   #Merge desired bands
+#   # mergeBands(layer.1 = paste0(tmpdir, "ndvi", i, ".tif"), layer.2 = paste0(tmpdir, "text", i, "band_0.tif"), layer.3 = paste0(tmpdir, "text", i, "band_1.tif"), layer.4 = paste0(tmpdir, "text", i, "band_3.tif"), layer.5 = paste0(tmpdir, "text", i, "band_7.tif"), out = paste0(tmpdir, "merge", i, ".tif"))
+#   mergeBands(layer.1 = myfiles[[i]], layer.2 = paste0(tmpdir, "ndviscale", i, ".tif"),out = paste0(tmpdir, "merge", i, ".tif"))
+#   #Segmentation
+#   meanShiftSmoothing(input = paste0(tmpdir, "merge", i, ".tif"), fout = paste0(tmpdir, "range", i, ".tif"), foutpos = paste0(tmpdir, "spatial", i, ".tif"))
+#   LSMSSegmentation(input = paste0(tmpdir, "range", i, ".tif"), inpos = paste0(tmpdir, "spatial", i, ".tif"), out = paste0(tmpdir, "seg", i, ".tif"))
+#   # LSMSSmallRegionsMerging(input = paste0(tmpdir, "range", i, ".tif"), inseg = paste0(tmpdir, "seg", i, ".tif"), out = paste0(tmpdir, "smallmerge", i, ".tif", minsize = 3))
+#   LSMSVectorization(input = myfiles[[i]], inseg = paste0(tmpdir, "seg", i, ".tif"), outshp = paste0(vectdir, "segfinal", i, ".shp"))
+#   
+# }
 
