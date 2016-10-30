@@ -155,6 +155,18 @@ LSMSVectorization <- function(input, inseg, outshp, tilesizex, tilesizey){
   system(paste(o_dir, "-in", input, "-inseg", inseg, "-out", outshp, "-tilesizex", tilesizex, "-tilesizey", tilesizey, sep=" "))
 }
 
+
+#Edge Detection
+edge <- function(input, output){
+  if(missing(input)){
+    stop("Pleaes provide input image")}
+  if(missing(output)){
+    stop("Please provide output")}
+  o_dir <- "E:\\OTB-5.6.1-win64\\OTB-5.6.1-win64\\bin\\otbcli_EdgeExtraction"
+  system(paste(o_dir, "-in", input, "-channel 1", "-out", output, "-ram 3000"))
+}
+
+
 # #list of geotifs
 # myfilenames <- list.files("E:\\geog515\\naip_tiffs\\", pattern=".tif$")
 # myfiles <- list.files("E:\\geog515\\naip_tiffs\\", pattern=".tif$", full.names=TRUE)
