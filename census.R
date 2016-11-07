@@ -12,13 +12,14 @@ library(SDMTools)
 library(parallel)
 
 #read api.key.install
-read.lines
+# read.lines
 
-#Texas is 48
-#Harris County is 201
+#Texas is 48 and Harris County is 201
 
+#make texas and harris county spatial polygon data frame
 tx <- counties("Texas", cb=TRUE)
 harris <- tx[tx$COUNTYFP == 201,]
+
 
 geo <- geo.make(state=c("TX"), county= 201, tract = "*")
 bg <- geo.make(state="TX", county= 201, tract = "*", block.group = "*")
@@ -40,6 +41,10 @@ age <- acs.fetch(endyear=2012, span=5, geography = bg, table.number = "B25034", 
 #Household Income: Table Number "B19001"
 income <- acs.fetch(endyear = 2014, span = 5, geography = bg, table.number = "B19001", col.names="pretty")
 
+#Ownership Type: Table Number "B25003"
+owner <- acs.fetch(endyear=2014, span = 5, geography = bg, table.number = "B25003", col.names = "pretty")
+
+# Make income data frame
 income_df <- data.frame(state = income@geography$state,
                         county = income@geography$county, 
                         tract = income@geography$tract,
@@ -63,11 +68,13 @@ income_df <- data.frame(state = income@geography$state,
                         greater200 = income@estimate[,17],
                         stringsAsFactors = FALSE)
 
+# Make income data frame column to merge
 income_df$merge <- paste(as.character(income_df$tract), as.character(income_df$bg), sep = ".")
 
+# Make join data frame merging income with block group
 join <- geo_join(bg2, income_df, "merge", "merge")
 
-
+#Make household value data frame
 value_df <- data.frame(state = value@geography$state,
                         county = value@geography$county, 
                         tract = value@geography$tract,
@@ -99,12 +106,13 @@ value_df <- data.frame(state = value@geography$state,
                         value1000 = value@estimate[,25],
                          stringsAsFactors = FALSE)
 
+# Make merge column
 value_df$merge <- paste(as.character(value_df$tract), as.character(value_df$bg), sep = ".")
 
-
-
+# Join value dataframe with previous join
 join <- geo_join(join, value_df, "merge", "merge")
 
+# Make household age data frame
 age_df <- data.frame(state = age@geography$state,
                        county = age@geography$county, 
                        tract = age@geography$tract,
@@ -121,10 +129,29 @@ age_df <- data.frame(state = age@geography$state,
                        year1940 = age@estimate[,10],
                        stringsAsFactors = FALSE)
 
+# Make merge column
 age_df$merge <- paste(as.character(age_df$tract), as.character(age_df$bg), sep = ".")
 
-
+# Join household age data frame to previous merge
 join <- geo_join(join, age_df, "merge", "merge")
+
+# Make ownership dataframe
+owner_df <- data.frame(state = owner@geography$state,
+                     county = owner@geography$county, 
+                     tract = owner@geography$tract,
+                     bg = owner@geography$blockgroup,
+                     t.occu = owner@estimate[,1],
+                     o.occu = owner@estimate[,2],
+                     r.occu = owner@estimate[,3],
+                     stringsAsFactors = FALSE)
+
+# Make merge column
+owner_df$merge <- paste(as.character(owner_df$tract), as.character(owner_df$bg), sep = ".")
+
+# Make join column
+join <- geo_join(join, owner_df, "merge", "merge")
+
+
 
 writeOGR(join, "E:/Dropbox/Fall2016/GEOG515/data/", "join", driver="ESRI Shapefile")
 sub.join <- readOGR("E:/Dropbox/Fall2016/GEOG515/data", "join_sub")
@@ -134,14 +161,14 @@ sub.join$can_prop <- NA
 
 # canopy.metrics <- list()
 
-per.cov <- function(img,region){
-  sub <- crop(img, region)
-  sub <- mask(sub, region)
-  sub[sub > 0] <- 2
-  sub[sub == 0] <- 1
-  sub[sub == 2] <- 0
-  return(ClassStat(as.matrix(sub),bkgd=0))
-}
+# per.cov <- function(img,region){
+#   sub <- crop(img, region)
+#   sub <- mask(sub, region)
+#   sub[sub > 0] <- 2
+#   sub[sub == 0] <- 1
+#   sub[sub == 2] <- 0
+#   return(ClassStat(as.matrix(sub),bkgd=0))
+# }
 
 for (i in 1:length(sub.join)){
   clip <- sub.join[i,]
@@ -163,3 +190,22 @@ final.df <- as.data.frame(final)
 income.frac <- final.df[,19:34]/final.df[,18]
 value.frac <- final.df[,41:64]/final.df[,40]
 age.frac <- final.df[,71:79]/final.df[,70]
+
+sub <- cbind(income.frac, value.frac, age.frac)
+sub$canopy <- final.df$can_prop
+
+sub <- sub[complete.cases(sub),]
+
+#model with just age covariates
+model.age <- glm(canopy~sub$yer2010+sub$y2000_2+sub$y1990_1+sub$y1980_1+sub$y1970_1+sub$y1960_1+sub$y1950_1+sub$y1940_1+sub$yer1940, data=sub, family=quasibinomial(link = "logit"))
+
+# Model with all covariates exclusing 1 from each category
+model.1 <- glm(canopy~.-grtr200 -val1000 -yer1940, data=sub, family = quasibinomial(link = "logit"))
+model.11 <- glm(canopy~.-grtr200 -val1000 -yer1940, data=sub[, -c(1:15)], family = quasibinomial(link = "logit"))
+model.12 <- glm(canopy~.-grtr200 -val1000 -yer1940, data=sub[, -c(17:39)], family = quasibinomial(link = "logit"))
+model.13 <- glm(canopy~.-grtr200 -val1000 -yer1940, data=sub[, -c(41:48)], family = quasibinomial(link = "logit"))
+anova(model.1, model.11, test='Chisq')
+anova(model.1, model.12, test='Chisq')
+anova(model.1, model.13, test='Chisq')
+
+model.2 <- glm(canopy~.-grtr200 -val1000 -yer1940, data=sub, family = quasibinomial)
