@@ -11,6 +11,11 @@ my.rasts <- lapply(my.files,stack)
 #writeRaster(naip, filename = "/Users/lando/Dropbox/Fall2016/GEOG515/data/mos_class1.tif", datatype="INT1U", format="GTiff")
 
 naip <- raster("/Users/lando/Dropbox/Fall2016/GEOG515/data/mos_class1.tif")
+naip <- raster("E:/Dropbox/Fall2016/GEOG515/data/mos_class1.tif")
+
+naip[naip > 0] <- 2
+naip[naip == 0] <- 1
+naip[naip == 2] <- 0
 
 #0 is Canopy
 #1 is Urban
@@ -25,5 +30,5 @@ naip <- raster("/Users/lando/Dropbox/Fall2016/GEOG515/data/mos_class1.tif")
 #writeRaster(my.smooth, filename = "/Volumes/geo_mac/svm/smooth.tif", format="GTiff", overwrite=TRUE)
 
 #SDMtools
-rm(my.smooth)
+
 

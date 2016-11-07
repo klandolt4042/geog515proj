@@ -1,11 +1,15 @@
 #look at Home Value and Structure
 #Year Built
+#Quasi-binominal logistic regression
+
 
 #load packages
 library(acs)
 library(tigris)
 library(stringr)
 library(rgdal)
+library(SDMTools)
+library(parallel)
 
 #read api.key.install
 read.lines
@@ -121,22 +125,41 @@ age_df$merge <- paste(as.character(age_df$tract), as.character(age_df$bg), sep =
 
 
 join <- geo_join(join, age_df, "merge", "merge")
-int.join <- raster::intersect(join, naip)
 
-int.join$canopy.area <- NA
+writeOGR(join, "E:/Dropbox/Fall2016/GEOG515/data/", "join", driver="ESRI Shapefile")
+sub.join <- readOGR("E:/Dropbox/Fall2016/GEOG515/data", "join_sub")
 
-for (i in 1:length(int.join)){
-  sub <- crop(naip, int.join[i,])
-  sub <- mask(sub, int.join[i,])
-  int.join$rel.c.area[i] <- length(sub[sub@data@values == 0] )/length(sub)
-  int.join$
+sub.join$can_prop <- NA
+# int.join <- raster::intersect(join, naip)
+
+# canopy.metrics <- list()
+
+per.cov <- function(img,region){
+  sub <- crop(img, region)
+  sub <- mask(sub, region)
+  sub[sub > 0] <- 2
+  sub[sub == 0] <- 1
+  sub[sub == 2] <- 0
+  return(ClassStat(as.matrix(sub),bkgd=0))
 }
 
+for (i in 1:length(sub.join)){
+  clip <- sub.join[i,]
+  sub <- crop(naip, clip)
+  sub <- mask(sub, clip)
+  sub[sub > 0] <- 2
+  sub[sub == 0] <- 1
+  sub[sub == 2] <- 0
+  prop <- ClassStat(as.matrix(sub),bkgd=0)
+  sub.join$can_prop[i] <- prop$prop.landscape
+  cat(i)
+}
 
+writeOGR(sub.join, dsn = "E:/Dropbox/Fall2016/GEOG515/data/", "final", driver = "ESRI Shapefile")
+final <- readOGR(dsn = "/Users/lando/Dropbox/Fall2016/GEOG515/data/", layer = "final")
 
-# for (i in 1:length(join)){
-#   if(inherits(tryCatch(crop(naip,join[i,]), error=function(e) e), "error") == TRUE)
-#     
-#     
-# }
+final.df <- as.data.frame(final)
 
+income.frac <- final.df[,19:34]/final.df[,18]
+value.frac <- final.df[,41:64]/final.df[,40]
+age.frac <- final.df[,71:79]/final.df[,70]
