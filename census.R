@@ -13,6 +13,7 @@ library(SDMTools)
 library(parallel)
 library(foreach)
 library(broom)
+library(ggmap)
 
 #read api.key.install
 # read.lines
@@ -305,8 +306,12 @@ names(test_set)[names(test_set) == "can_prop"] <- "true_can_prop"
 # model.tot <- glm(can_prop~. -income.frac$inc125_greater -value.frac$val500_greater -age.frac$y2000_present -owner.frac$o.occu, data=train_set@data, family = quasibinomial(link = "logit"))
 model.tot <- glm(can_prop~. -inc125_greater -val500_greater -y2000_present -o.occu, data=train_set@data, family = quasibinomial(link = "logit"))
 
+oddrat <- exp(cbind(Odds_and_OR=coef(model.tot), confint(model.tot)))
+
+
 test_set$pred_can_prop <- predict(model.tot, test_set@data, type="response")
 test_set$error <- test_set$true_can_prop - test_set$pred_can_prop
+t.test(test_set$true_can_prop, test_set$pred_can_prop)
 
 #Plotting shapefile
 train_set@data$id = rownames(train_set@data)
